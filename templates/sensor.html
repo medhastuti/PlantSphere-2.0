@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sensors - PlantSphere</title>
+  <link rel="icon" type="image/png" href="https://img.icons8.com/?size=100&id=H7nzwXHBxuzU&format=png&color=000000" />
+  <link rel="stylesheet" href="/static/style.css">
+  <!-- Firebase (compat used for quick demo) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="brand">
+        <div class="logo">
+          <img src="https://img.icons8.com/?size=100&id=Uv7eeOHaVcPm&format=png&color=000000" alt="IoT Plant Logo" style="width:42px; height:auto; object-fit:contain;">
+        </div>
+        <div>
+          <h1>PlantSphere</h1>
+          <p class="subtitle">Dashboard — Real-time monitoring</p>
+        </div>
+      </div>
+
+      <div class="header-right">
+        
+        <div class="status-box">
+          <span class="label" >Firebase</span>
+          <span id="connectionStatus" class="badge warn">Demo</span>
+        </div>
+
+        <div class="status-box node-box">
+          <div class="node-top">
+            <span class="label">NodeMCU</span>
+            <span id="nodeStateBadge" class="badge err">OFFLINE</span>
+          </div>
+          <div id="nodeLastSeen" class="last-seen">Last Seen: —</div>
+        </div>
+
+      </div>
+    </header>
+
+   
+
+    <main class="grid grid-cols-12 gap-4">
+
+
+      <!-- Soil -->
+      <section class="card col-span-4" id="soilCard">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Soil — Moisture</div>
+            <div class="muted">Soil sensor readings</div>
+          </div>
+          <div class="icon" title="Soil">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color:#34d399"><path d="M21 12c0 3.866-4.03 7-9 7s-9-3.134-9-7a9 9 0 0 1 18 0z" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+        <div class="card-body" id="soilcontainer">
+          <div style="display:flex;gap:12px;align-items:center">
+            <svg id="soilGauge" class="gauge-svg" viewBox="0 0 120 90" preserveAspectRatio="xMidYMid meet">
+              <path class="gauge-bg" d="M12 70 A48 48 0 0 1 108 70" />
+              <path class="gauge-arc" d="M12 70 A48 48 0 0 1 108 70" id="soilArc" />
+              <text class="gauge-label" x="60" y="36" text-anchor="middle">%</text>
+              <text class="gauge-value" id="soilGaugeValue" x="60" y="62" text-anchor="middle">—</text>
+            </svg>
+
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div class="muted">Soil Moisture</div>
+              <div class="value" id="soilMoist">—</div>
+              <div class="small-muted" id="soilUpdated">—</div>
+              <div style="margin-top:8px"><span id="soilStatus" class="badge warn">—</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Pump -->
+      <section class="card col-span-4" id="pumpCard" aria-live="polite">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Water Pump</div>
+            <div class="muted">Toggle pump ON / OFF</div>
+          </div>
+          
+          <div id="pumpBadge" class="badge err">Unknown</div>
+           
+        </div>
+        <div class="card-body">
+          <div class="pump-row">
+            <div>
+              <div class="muted">Pump State</div>
+              <div id="pumpStateText" class="value">—</div>
+              <div class="foot">Last: <span id="pumpUpdated" class="small-muted">—</span></div>
+            </div>
+            <div style="text-align:right">
+                <label class="toggle-wrapper">
+                <input type="checkbox" id="pumpToggle">
+                <div class="toggle">
+                    <div class="toggle-circle"></div>
+                </div>
+                </label>
+              <div style="height:8px"></div>
+              <div class="muted">Manual control</div>
+            </div>
+          </div>
+          <div style="margin-top:12px" class="muted">Path: <code id="pumpPath">/actuators/pump</code></div>
+        </div>
+      </section>
+
+      <!-- Water -->
+      <section class="card col-span-4" id="waterCard">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Water Level</div>
+            <div class="muted">Measured by water sensor</div>
+          </div>
+          <div class="icon" title="Water sensor">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color:#60a5fa"><path d="M12 2s-6 6.5-6 11a6 6 0 0 0 12 0c0-4.5-6-11-6-11z" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          </div>
+        </div>
+        <div class="card-body" id="watercontainer">
+          <div class="sensor-row">
+            <div style="display:flex;gap:12px;align-items:center">
+              <div class="water-visual" aria-hidden="true">
+                <div id="waterWave" class="water-wave" style="height:40%"></div>
+              </div>
+              <div style="margin-left:40px">
+                <div class="value" id="waterValue">—</div>
+                <div class="small-muted">Level (percent)</div>
+                <div style="margin-top:8px"><span id="waterStatus" class="badge warn">—</span> <span id="waterUpdated" class="small-muted" style="margin-left:8px">—</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- DHT -->
+      <section class="card col-span-4" id="dhtCard">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Temperature & Humidity (DHT11)</div>
+            <div class="muted">Live sensor data</div>
+          </div>
+          <div class="icon" title="DHT11">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color:#fb923c"><path d="M14 14.76V5a2 2 0 1 0-4 0v9.76A4 4 0 1 0 14 14.76z" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+        <div class="card-body" id="dhtcontainer">
+
+          <div class="card-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+            <div>
+              <svg id="tempGauge" class="gauge-svg" viewBox="0 0 120 90">
+                <path class="gauge-bg" d="M12 70 A48 48 0 0 1 108 70" />
+                <path class="gauge-arc" id="tempArc" d="M12 70 A48 48 0 0 1 108 70" />
+                <text class="gauge-label" x="60" y="36" text-anchor="middle">°C</text>
+                <text class="gauge-value" id="tempGaugeValue" x="60" y="62" text-anchor="middle">—</text>
+              </svg>
+              <div class="muted">Temperature</div>
+              <div class="value" id="tempValue">—</div>
+              <div class="small-muted" id="tempUpdated">—</div>
+            </div>
+            <div>
+              <svg id="humGauge" class="gauge-svg" viewBox="0 0 120 90">
+                <path class="gauge-bg" d="M12 70 A48 48 0 0 1 108 70" />
+                <path class="gauge-arc" id="humArc" d="M12 70 A48 48 0 0 1 108 70" />
+                <text class="gauge-label" x="60" y="36" text-anchor="middle">%</text>
+                <text class="gauge-value" id="humGaugeValue" x="60" y="62" text-anchor="middle">—</text>
+              </svg>
+              <div class="muted">Humidity</div>
+              <div class="value" id="humValue">—</div>
+              <div class="small-muted" id="humUpdated">—</div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px;display:flex;gap:8px;"><div id="tempBadge" class="badge ok">—</div><div id="humBadge" class="badge warn">—</div></div>
+        </div>
+      </section>
+
+      <!-- Solar -->
+      <section class="card col-span-8" id="solarCard">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Solar Panel — Voltage</div>
+            <div class="muted">Real-time voltage & trend</div>
+          </div>
+          <div class="icon" title="Solar Voltage">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color:#fbbf24"><path d="M12 2v6M5 8l2 4 3 1 2 4 2-4 3-1 2-4" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div class="muted">Voltage</div>
+              <div class="value" id="voltageValue">—</div>
+              <div class="small-muted" id="voltageUpdated">—</div>
+            </div>
+            <div style="text-align:right">
+              <div class="muted">Status</div>
+              <div id="voltageBadge" class="badge warn">—</div>
+            </div>
+          </div>
+
+          <canvas id="voltageCanvas"></canvas>
+          <div class="foot">Graph shows recent <span id="voltagePointsCount">0</span> readings</div>
+        </div>
+      </section>
+
+      <!-- LDR -->
+      <section class="card col-span-4" id="ldrCard">
+        <div class="card-header">
+          <div>
+            <div class="card-title">LDR (Light)</div>
+            <div class="muted">Ambient light sensor</div>
+          </div>
+          <div class="icon" title="LDR">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color:#fde68a">
+              <path d="M12 2v3M5 4l2 2M19 4l-2 2M2 12h3M19 12h3M5 20l2-2M19 20l-2-2M12 19v3"
+                    stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="card-body">
+
+          <!-- ⭐ BIG WHITE LIGHT PERCENTAGE -->
+          <div style="font-size:32px; font-weight:600; color:white; margin-bottom:6px;">
+            <span id="ldrValue">—</span>
+          </div>
+
+          <div style="height:10px;margin:8px 0;" class="mini-bar">
+            <div id="ldrFill" class="mini-fill"
+                style="width:0%; background:linear-gradient(90deg,#fcd34d,#f59e0b)">
+            </div>
+          </div>
+
+          <div class="muted">Light level</div>
+          <div style="margin-top:8px">
+            <span id="ldrStatus" class="badge ok">—</span>
+            <span class="muted" id="ldrUpdated">—</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <section class="card col-span-12">
+        <div class="footer-body" id="footerCard" 
+            style="display:flex;justify-content:center;align-items:center;flex-direction:column;padding:22px 12px;">
+          <div style="margin-top:6px; font-size:0.8rem; color:#8a8f9b; text-align:center;">
+            Powered by NodeMCU • Firebase • ADS1115
+          </div>
+          <div style="margin-top:6px;font-family:monospace;font-size:0.1rem;color:var(--muted)"><span id="pathsHint">/sensors/...</span></div>
+          <div style="margin-top:12px; font-size:0.75rem; color:#5f6673; text-align:center;">
+            © 2025 PlantSphere. All rights reserved.
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

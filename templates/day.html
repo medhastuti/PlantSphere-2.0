@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day - PlantSphere</title>
+<link rel="icon" type="image/png" href="https://img.icons8.com/?size=100&id=H7nzwXHBxuzU&format=png&color=000000" />
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<style>
+    :root {
+        --bg-main: #050505;
+        --bg-gradient-1: #0f172a;
+        --bg-gradient-2: #020617;
+        
+        --glass-bg: rgba(20, 25, 35, 0.4);
+        --glass-border: rgba(255, 255, 255, 0.06);
+        --glass-highlight: rgba(255, 255, 255, 0.03);
+        
+        --text-main: #f8fafc;
+        --text-muted: #94a3b8;
+        --text-dark: #64748b;
+        
+        --primary: #22c55e;
+        --primary-hover: #16a34a;
+        
+        --color-soil: #3b82f6;
+        --color-temp: #f97316;
+        --color-hum: #10b981;
+        --color-light: #eab308;
+    }
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        background: radial-gradient(circle at 15% 50%, var(--bg-gradient-1), transparent 50%),
+                    radial-gradient(circle at 85% 30%, var(--bg-gradient-2), transparent 50%),
+                    var(--bg-main);
+        color: var(--text-main);
+        font-family: 'Inter', sans-serif;
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-dark); }
+
+    /* ANIMATIONS */
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-fade-in {
+        animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        opacity: 0;
+    }
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+
+    /* NAVBAR */
+    .navbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.25rem 3%;
+        background: rgba(5, 5, 5, 0.6);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border-bottom: 1px solid var(--glass-border);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+
+    .logo {
+        font-size: 1.25rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        letter-spacing: -0.5px;
+        background: linear-gradient(to right, #4ade80, #22c55e);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .logo i { -webkit-text-fill-color: #4ade80; }
+
+    .back-btn {
+        padding: 10px 18px;
+        border: 1px solid var(--glass-border);
+        border-radius: 10px;
+        background: var(--glass-bg);
+        color: var(--text-main);
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .back-btn:hover {
+        background: var(--glass-highlight);
+        border-color: var(--text-muted);
+    }
+
+    /* CONTAINER - Full Width */
+    .container {
+        width: 100%;
+        max-width: 100%;
+        padding: 1.5rem 3%;
+    }
+
+    .header-section {
+        margin-bottom: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .title {
+        font-size: 2rem;
+        font-weight: 600;
+        letter-spacing: -0.5px;
+    }
+
+    .title span {
+        color: var(--text-muted);
+        font-weight: 400;
+        white-space: nowrap; /* Prevents awkward date splitting on mobile */
+    }
+
+    /* GLASS CARD BASE */
+    .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+        padding: 1.75rem;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1), 
+                    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    /* SUMMARY GRID */
+    .summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 2rem;
+        margin-bottom: 2.5rem;
+    }
+
+    .summary-item {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .summary-item h3 {
+        font-size: 0.75rem;
+        color: var(--text-dark);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+    }
+
+    .summary-item h2 {
+        font-size: 1.125rem;
+        font-weight: 500;
+    }
+
+    /* MAIN GRID */
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+    }
+
+    /* METRIC CARDS */
+    .cards {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
+
+    .metric-card {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.25rem 1.5rem;
+        transition: transform 0.3s ease, border-color 0.3s ease;
+    }
+
+    .metric-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .metric-card:nth-child(1):hover {
+        border-color: rgba(59, 130, 246, 0.6);
+    }
+
+    .metric-card:nth-child(2):hover {
+        border-color: rgba(249, 115, 22, 0.6);
+    }
+
+    .metric-card:nth-child(3):hover {
+        border-color: rgba(16, 185, 129, 0.6);
+    }
+
+    .metric-card:nth-child(4):hover {
+        border-color: rgba(234, 179, 8, 0.6);
+    }
+
+    .metric-card:hover .metric-info h2 {
+        color: #ffffff;
+    }
+
+    .metric-card:hover .metric-info h3 {
+        color: #cbd5f5;
+    }
+
+    .icon-box {
+        width: 48px;
+        height: 48px;
+        flex-shrink: 0;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+
+    .metric-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        overflow: hidden;
+    }
+
+    .metric-info h3 {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        font-weight: 500;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+    }
+
+    .metric-info h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+    }
+
+    /* CHART */
+    .chart-wrapper {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+    }
+    
+    .chart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .chart-header h3 {
+        font-size: 1.125rem;
+        font-weight: 500;
+    }
+
+    .chart-box {
+        position: relative;
+        flex-grow: 1;
+        width: 100%;
+        height: 100%;
+    }
+
+    /* TABLE */
+    .table-container {
+        margin-bottom: 3rem;
+        width: 100%;
+    }
+
+    .table-header {
+        margin-bottom: 1rem;
+        font-size: 1.125rem;
+        font-weight: 500;
+    }
+
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+        max-width: 100vw;
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+        border-radius: 16px;
+        border: 1px solid var(--glass-border);
+        background: var(--glass-bg);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    table {
+        width: 100%;
+        min-width: 600px; /* Forces scroll instead of shrinking columns to 0 */
+        border-collapse: collapse;
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    th {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 1.25rem 1.5rem;
+        font-size: 0.75rem;
+        color: var(--text-dark);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        border-bottom: 1px solid var(--glass-border);
+    }
+
+    td {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: var(--text-muted);
+        transition: color 0.2s ease;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255, 255, 255, 0.02); color: var(--text-main); }
+
+    /* STATUS BADGES */
+    #status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        width: max-content;
+    }
+    
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    .healthy { background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2); }
+    .healthy .status-dot { background: #34d399; box-shadow: 0 0 8px #34d399; }
+    
+    .moderate { background: rgba(234, 179, 8, 0.1); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.2); }
+    .moderate .status-dot { background: #facc15; box-shadow: 0 0 8px #facc15; }
+    
+    .critical { background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+    .critical .status-dot { background: #f87171; box-shadow: 0 0 8px #f87171; }
+
+    /* --- MOBILE RESPONSIVENESS --- */
+    @media (max-width: 1024px) {
+        .dashboard-grid { grid-template-columns: 1fr; }
+        .cards { grid-template-columns: repeat(2, 1fr); }
+        .chart-wrapper { min-height: 350px; }
+    }
+
+    @media (max-width: 768px) {
+        .container { padding: 1.5rem 4%; }
+        .glass-card { padding: 1.25rem; }
+        .summary { grid-template-columns: repeat(2, 1fr); gap: 1.25rem; }
+        .title { font-size: 1.5rem; }
+        .metric-card { padding: 1rem; }
+        .metric-info h2 { font-size: 1.25rem; }
+    }
+
+    @media (max-width: 480px) {
+        .navbar { padding: 1rem 4%; }
+        .logo { font-size: 1.1rem; }
+        .cards { grid-template-columns: 1fr; } /* Stack metric cards */
+        .summary { grid-template-columns: repeat(2, 1fr); gap: 1rem; } /* Keep 2 column summary */
+        .chart-wrapper {
+            height: 260px;
+            padding: 0.75rem;
+        }
+        .table-responsive { border-radius: 12px; }
+        .back-btn {
+            padding: 6px 10px;
+            font-size: 0.75rem;
+        }
+    }
+</style>
+</head>
+
+<body>
+<nav class="navbar">
+    <div class="logo"><i class="ph-fill ph-plant"></i> PlantSphere</div>
+    <button class="back-btn" onclick="goBack()"><i class="ph ph-arrow-left"></i> Back</button>
+</nav>
+
+<div class="container">
+    
+    <div class="header-section animate-fade-in">
+        <h1 class="title">Day Details <span>/ {{ date }}</span></h1>
+    </div>
+
+    <div class="glass-card summary animate-fade-in delay-1">
+        <div class="summary-item">
+            <h3>Plant Name</h3>
+            <h2 id="plantName">Tomato Plant</h2>
+        </div>
+        <div class="summary-item">
+            <h3>Plant ID</h3>
+            <h2 id="plantId">PLANT-001</h2>
+        </div>
+        <div class="summary-item">
+            <h3>Date Recorded</h3>
+            <h2>{{ date }}</h2>
+        </div>
+        <div class="summary-item">
+            <h3>Overall Health</h3>
+            <div id="status" class="healthy">
+                <div class="status-dot"></div>
+                <span id="statusText">Loading...</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="cards animate-fade-in delay-2">
+            <div class="glass-card metric-card">
+                <div class="icon-box" style="background: rgba(59, 130, 246, 0.1); color: var(--color-soil);">
+                    <i class="ph-fill ph-drop"></i>
+                </div>
+                <div class="metric-info">
+                    <h3>Soil Moisture</h3>
+                    <h2 id="soil">--</h2>
+                </div>
+            </div>
+            
+            <div class="glass-card metric-card">
+                <div class="icon-box" style="background: rgba(249, 115, 22, 0.1); color: var(--color-temp);">
+                    <i class="ph-fill ph-thermometer"></i>
+                </div>
+                <div class="metric-info">
+                    <h3>Temperature</h3>
+                    <h2 id="temp">--</h2>
+                </div>
+            </div>
+            
+            <div class="glass-card metric-card">
+                <div class="icon-box" style="background: rgba(16, 185, 129, 0.1); color: var(--color-hum);">
+                    <i class="ph-fill ph-cloud-fog"></i>
+                </div>
+                <div class="metric-info">
+                    <h3>Humidity</h3>
+                    <h2 id="humidity">--</h2>
+                </div>
+            </div>
+            
+            <div class="glass-card metric-card">
+                <div class="icon-box" style="background: rgba(234, 179, 8, 0.1); color: var(--color-light);">
+                    <i class="ph-fill ph-sun"></i>
+                </div>
+                <div class="metric-info">
+                    <h3>Light Level</h3>
+                    <h2 id="light">--</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card chart-wrapper animate-fade-in delay-2">
+            <div class="chart-header">
+                <h3>Environment Trends</h3>
+            </div>
+            <div class="chart-box">
+                <canvas id="chart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-container animate-fade-in delay-3">
+        <h3 class="table-header">Hourly Readings</h3>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Soil Moisture</th>
+                        <th>Temperature</th>
+                        <th>Humidity</th>
+                        <th>Light Level</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+function goBack() { window.history.back(); }
+
+// Chart Configuration 
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.color = "#64748b";
+Chart.defaults.scale.grid.color = "rgba(255, 255, 255, 0.03)";
+let chartInstance = null;
+
+// Template variable fallback for local HTML testing
+let rawDate = "{{ date }}";
+const date = rawDate.includes("{") ? new Date().toISOString().split('T')[0] : rawDate;
+
+// Fallback Mock Data (In case API fails)
+const generateMockData = () => {
+    const data = [];
+    for(let i=8; i<=18; i++) {
+        data.push({
+            time: `${i}:00`,
+            soil: 400 + Math.random() * 200, 
+            temp: 22 + Math.random() * 6,
+            humidity: 50 + Math.random() * 15,
+            light: 600 + Math.random() * 300
+        });
+    }
+    return data;
+};
+
+document.addEventListener("DOMContentLoaded", async () => {
+    let avg = {};
+    let data = [];
+
+    try {
+        const res1 = await fetch("/api/day-summary/" + date);
+        const res2 = await fetch("/api/day/" + date);
+        
+        if (res1.ok && res2.ok) {
+            avg = await res1.json();
+            data = await res2.json();
+        } else {
+            throw new Error("API not available, using fallback data.");
+        }
+    } catch (err) {
+        console.warn(err.message);
+        data = generateMockData();
+        avg = { soil: 450, temp: 24.5, humidity: 55, light: 750, status: "Healthy" };
+        
+        document.querySelectorAll('h2').forEach(el => {
+            if(el.innerText.includes('{{ date }}')) el.innerText = date;
+        });
+        document.querySelector('.title span').innerText = `/ ${date}`;
+    }
+
+    // POPULATE SUMMARY
+    const soilAvg = avg.soil ? ((1000 - avg.soil) / 10).toFixed(1) : null;
+    const lightAvg = avg.light ? ((avg.light / 1023) * 100).toFixed(1) : null;
+
+    document.getElementById("soil").innerText = soilAvg ? soilAvg + "%" : "--";
+    document.getElementById("temp").innerText = avg.temp ? Number(avg.temp).toFixed(1) + "°C" : "--";
+    document.getElementById("humidity").innerText = avg.humidity ? Number(avg.humidity).toFixed(1) + "%" : "--";
+    document.getElementById("light").innerText = lightAvg ? lightAvg + "%" : "--";
+
+    const statusEl = document.getElementById("status");
+    const statusText = document.getElementById("statusText");
+    const state = avg.status || "Healthy";
+    statusText.innerText = state;
+    statusEl.className = state.toLowerCase();
+
+    // POPULATE TABLE
+    const table = document.getElementById("tableBody");
+    table.innerHTML = "";
+    
+    if (!data || data.length === 0) {
+        table.innerHTML = "<tr><td colspan='5' style='text-align:center;'>No data recorded</td></tr>";
+        return;
+    }
+
+    data.forEach(row => {
+        table.innerHTML += `
+            <tr>
+                <td style="color: var(--text-main); font-weight: 600;">
+                    ${row.time.includes(" ")
+                        ? row.time.split(" ")[1].split(".")[0]
+                        : row.time}
+                </td>
+                <td>${((1000 - row.soil) / 10).toFixed(1)}%</td>
+                <td>${Number(row.temp).toFixed(1)}°C</td>
+                <td>${Number(row.humidity).toFixed(1)}%</td>
+                <td>${((row.light / 1023) * 100).toFixed(1)}%</td>
+            </tr>
+        `;
+    });
+
+    // RENDER PREMIUM CHART
+    const ctx = document.getElementById("chart").getContext("2d");
+    
+    const createGradient = (colorRgb) => {
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, `rgba(${colorRgb}, 0.25)`);
+        gradient.addColorStop(1, `rgba(${colorRgb}, 0.0)`);
+        return gradient;
+    };
+
+    const labels = data.map((_, i) => `#${i+1}`);
+    const temps = data.map(d => Number(d.temp) || 0);
+    const hums = data.map(d => Number(d.humidity) || 0);
+    const soils = data.map(d => ((1000 - d.soil) / 10));
+
+    if (chartInstance) chartInstance.destroy();
+
+    chartInstance = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: "Temperature (°C)",
+                    data: temps,
+                    borderColor: "#f97316",
+                    backgroundColor: createGradient('249, 115, 22'),
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: "#050505",
+                    pointBorderColor: "#f97316",
+                    pointBorderWidth: 2
+                },
+                {
+                    label: "Humidity (%)",
+                    data: hums,
+                    borderColor: "#10b981",
+                    backgroundColor: createGradient('16, 185, 129'),
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: "#050505",
+                    pointBorderColor: "#10b981",
+                    pointBorderWidth: 2
+                },
+                {
+                    label: "Soil Moisture (%)",
+                    data: soils,
+                    borderColor: "#3b82f6",
+                    backgroundColor: createGradient('59, 130, 246'),
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: "#050505",
+                    pointBorderColor: "#3b82f6",
+                    pointBorderWidth: 2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    align: 'end',
+                    labels: { 
+                        usePointStyle: true,
+                        boxWidth: 8,
+                        boxHeight: 8,
+                        padding: 15,
+                        font: { size: 12, weight: '500' }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(5, 5, 5, 0.85)',
+                    titleFont: { size: 13, family: "'Inter', sans-serif" },
+                    bodyFont: { size: 13, family: "'Inter', sans-serif" },
+                    padding: 16,
+                    cornerRadius: 12,
+                    borderColor: 'rgba(255,255,255,0.08)',
+                    borderWidth: 1,
+                    usePointStyle: true,
+                    boxPadding: 6
+                }
+            },
+            scales: {
+                x: {
+                    grid: { drawBorder: false, display: false },
+                    ticks: { maxTicksLimit: 8, padding: 10 }
+                },
+                y: {
+                    grid: { drawBorder: false, color: "rgba(255, 255, 255, 0.04)" },
+                    beginAtZero: true,
+                    ticks: { padding: 10 }
+                }
+            }
+        }
+    });
+});
+</script>
+
+</body>
+</html>

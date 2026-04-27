@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>History - PlantSphere</title>
+<link rel="icon" type="image/png" href="https://img.icons8.com/?size=100&id=H7nzwXHBxuzU&format=png&color=000000" />
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+<style>
+    :root {
+        --bg-main: #050505;
+        --bg-gradient-1: #0f172a;
+        --bg-gradient-2: #020617;
+        
+        --glass-bg: rgba(20, 25, 35, 0.4);
+        --glass-border: rgba(255, 255, 255, 0.06);
+        --glass-highlight: rgba(255, 255, 255, 0.03);
+        
+        --text-main: #f8fafc;
+        --text-muted: #94a3b8;
+        --text-dark: #64748b;
+        
+        --primary: #22c55e;
+        --primary-hover: #16a34a;
+        
+        --color-soil: #3b82f6;
+        --color-temp: #f97316;
+        --color-hum: #10b981;
+        --color-light: #eab308;
+    }
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        background: radial-gradient(circle at 15% 50%, var(--bg-gradient-1), transparent 50%),
+                    radial-gradient(circle at 85% 30%, var(--bg-gradient-2), transparent 50%),
+                    var(--bg-main);
+        color: var(--text-main);
+        font-family: 'Inter', sans-serif;
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-dark); }
+
+    /* ANIMATIONS */
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+        animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        opacity: 0;
+    }
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+
+    /* NAVBAR */
+    .navbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.25rem 3%;
+        background: rgba(5, 5, 5, 0.6);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border-bottom: 1px solid var(--glass-border);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+
+    .logo {
+        font-size: 1.25rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        letter-spacing: -0.5px;
+        background: linear-gradient(to right, #4ade80, #22c55e);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .logo i { -webkit-text-fill-color: #4ade80; }
+
+    .back-btn {
+        padding: 10px 18px;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(255,255,255,0.04);
+        color: #e2e8f0;
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .back-btn:hover {
+        background: rgba(255,255,255,0.07);
+        border-color: rgba(255,255,255,0.2);
+        color: #ffffff;
+    }
+
+    .back-btn i {
+        font-size: 1.1rem;
+        color: var(--text-muted);
+    }
+
+    .back-wrapper {
+        width: 100%;
+        max-width: 1400px;
+        margin: 1.2rem auto 0;
+        padding: 0 3%;
+    }
+
+    .action-btn {
+        padding: 10px 18px;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(255,255,255,0.04);
+        color: #e2e8f0;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .action-btn:hover {
+        border-color: #22c55e;
+        color: #22c55e;
+        background: rgba(34, 197, 94, 0.08);
+        transform: translateY(-1px);
+    }
+
+    /* CONTAINER */
+    .container {
+        width: 100%;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2.5rem 3%;
+    }
+
+    /* HEADER & FILTERS */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+    }
+
+    .title {
+        font-size: 2rem;
+        font-weight: 600;
+        letter-spacing: -0.5px;
+    }
+
+    .filters {
+        display: flex;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.06); /* brighter */
+        padding: 6px;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.12); /* stronger border */
+    }
+
+    .filter-btn {
+        padding: 8px 20px;
+        border-radius: 8px;
+        border: none;
+        background: transparent;
+        color: #cbd5f5;
+        font-weight: 500;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .filter-btn:hover {
+        color: var(--text-main);
+    }
+
+    .filter-btn.active {
+        background: rgba(255,255,255,0.12); /* more visible */
+        color: #ffffff;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    /* CARDS */
+    .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 3rem;
+    }
+
+    .card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: transform 0.3s ease, border-color 0.3s ease;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    /* Soil */
+    .card:nth-child(1) {
+        border: 1px solid rgba(59, 130, 246, 0.25);
+    }
+    .card:nth-child(1):hover {
+        border-color: rgba(59, 130, 246, 0.6);
+    }
+
+    /* Temperature */
+    .card:nth-child(2) {
+        border: 1px solid rgba(249, 115, 22, 0.25);
+    }
+    .card:nth-child(2):hover {
+        border-color: rgba(249, 115, 22, 0.6);
+    }
+
+    /* Humidity */
+    .card:nth-child(3) {
+        border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+    .card:nth-child(3):hover {
+        border-color: rgba(16, 185, 129, 0.6);
+    }
+
+    /* Light */
+    .card:nth-child(4) {
+        border: 1px solid rgba(234, 179, 8, 0.25);
+    }
+    .card:nth-child(4):hover {
+        border-color: rgba(234, 179, 8, 0.6);
+    }
+
+    .icon-box {
+        width: 52px;
+        height: 52px;
+        flex-shrink: 0;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+
+    .card-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .card h3 {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .card h1 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+    }
+
+    /* TABLE SECTION */
+    .table-container {
+        margin-bottom: 3rem;
+        width: 100%;
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .table-header {
+        margin-bottom: 1.5rem;
+        font-size: 1.25rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border-radius: 12px;
+        border: 1px solid var(--glass-border);
+    }
+
+    table {
+        width: 100%;
+        min-width: 700px;
+        border-collapse: collapse;
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    th {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 1.25rem 1.5rem;
+        font-size: 0.75rem;
+        color: var(--text-dark);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        border-bottom: 1px solid var(--glass-border);
+    }
+
+    td {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: var(--text-main);
+        transition: color 0.2s ease, background 0.2s ease;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    
+    tr.clickable-row:hover td { 
+        background: rgba(255, 255, 255, 0.03); 
+        cursor: pointer;
+    }
+
+    /* STATUS BADGES */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    .healthy { background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2); }
+    .healthy .status-dot { background: #34d399; box-shadow: 0 0 8px #34d399; }
+    
+    .moderate { background: rgba(234, 179, 8, 0.1); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.2); }
+    .moderate .status-dot { background: #facc15; box-shadow: 0 0 8px #facc15; }
+
+    /* MOBILE RESPONSIVENESS */
+    @media (max-width: 768px) {
+        .page-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+        .filters { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); }
+        .filter-btn { text-align: center; padding: 8px 4px; font-size: 0.8rem; }
+        .card { padding: 1.25rem; }
+        .table-container { padding: 1rem; }
+    }
+    
+    @media (max-width: 480px) {
+        .navbar { padding: 1rem 4%; }
+        .logo { font-size: 1.1rem; }
+        .action-btn span { display: none; } /* Hide text, keep icon on tiny screens */
+    }
+</style>
+</head>
+
+<body>
+
+<nav class="navbar">
+    <div class="logo"><i class="ph-fill ph-plant"></i> PlantSphere</div>
+    <button class="action-btn" onclick="download()">
+        <i class="ph-bold ph-download-simple"></i> <span>Export Data</span>
+    </button>
+</nav>
+
+<div class="back-wrapper">
+    <button class="back-btn" onclick="goDashboard()">
+        <i class="ph ph-arrow-left"></i> Dashboard
+    </button>
+</div>
+
+<div class="container">
+
+    <header class="page-header animate-fade-in">
+        <h1 class="title">Past Data Overview</h1>
+        
+        <div class="filters">
+            <button class="filter-btn" onclick="loadAll('today', this)">Today</button>
+            <button class="filter-btn active" onclick="loadAll('7days', this)">Last 7 Days</button>
+            <button class="filter-btn" onclick="loadAll('30days', this)">Last 30 Days</button>
+        </div>
+    </header>
+
+    <div class="cards animate-fade-in delay-1">
+        <div class="card">
+            <div class="icon-box" style="background: rgba(59, 130, 246, 0.1); color: var(--color-soil);">
+                <i class="ph-fill ph-drop"></i>
+            </div>
+            <div class="card-info">
+                <h3>Avg Moisture</h3>
+                <h1 id="soilAvg">--</h1>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="icon-box" style="background: rgba(249, 115, 22, 0.1); color: var(--color-temp);">
+                <i class="ph-fill ph-thermometer"></i>
+            </div>
+            <div class="card-info">
+                <h3>Avg Temp</h3>
+                <h1 id="tempAvg">--</h1>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="icon-box" style="background: rgba(16, 185, 129, 0.1); color: var(--color-hum);">
+                <i class="ph-fill ph-cloud-fog"></i>
+            </div>
+            <div class="card-info">
+                <h3>Avg Humidity</h3>
+                <h1 id="humAvg">--</h1>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="icon-box" style="background: rgba(234, 179, 8, 0.1); color: var(--color-light);">
+                <i class="ph-fill ph-sun"></i>
+            </div>
+            <div class="card-info">
+                <h3>Avg Light</h3>
+                <h1 id="lightAvg">--</h1>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-container animate-fade-in delay-2">
+        <h3 class="table-header"><i class="ph-fill ph-calendar-blank"></i> Daily Records</h3>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date Recorded</th>
+                        <th>Soil Moisture</th>
+                        <th>Temperature</th>
+                        <th>Humidity</th>
+                        <th>Light Level</th>
+                        <th>Health Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// ---------- MOCK DATA GENERATOR (Fallback for missing API) ----------
+const generateMockData = (days) => {
+    const data = [];
+    let date = new Date();
+    for(let i=0; i<days; i++) {
+        const d = new Date(date);
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0];
+        
+        const soil = (45 + Math.random() * 30).toFixed(1) + "%";
+        const temp = (22 + Math.random() * 6).toFixed(1) + "°C";
+        const hum = (50 + Math.random() * 20).toFixed(1) + "%";
+        const light = (60 + Math.random() * 40).toFixed(1) + "%";
+        const status = Math.random() > 0.2 ? "Healthy" : "Moderate";
+
+        data.push({ date: dateStr, soil, temp, humidity: hum, light, status });
+    }
+    return data;
+};
+
+const mockAverages = {
+    'today': { soil: "58.2%", temp: "26.1°C", humidity: "52.4%", light: "85.0%" },
+    '7days': { soil: "62.4%", temp: "24.5°C", humidity: "55.1%", light: "78.2%" },
+    '30days': { soil: "65.0%", temp: "23.2°C", humidity: "58.7%", light: "72.4%" }
+};
+// --------------------------------------------------------------------
+
+function goDashboard(){
+    try {
+        window.location.href = "/";
+    } catch (e) {
+        console.log("Back to dashboard");
+    }
+}
+
+async function loadAll(type, btn) {
+    // UI Update for buttons
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+
+    let avg = {};
+    let data = [];
+
+    try {
+        // Attempt API fetch
+        const avgRes = await fetch("/api/averages/" + type);
+        const dataRes = await fetch("/api/summary/" + type);
+        
+        if (avgRes.ok && dataRes.ok) {
+            avg = await avgRes.json();
+            data = await dataRes.json();
+        } else {
+            throw new Error("API unavailable");
+        }
+    } catch (error) {
+        console.warn("Using fallback data due to missing API:", error.message);
+        // Fallback to Mock Data
+        avg = mockAverages[type];
+        const rowsCount = type === 'today' ? 1 : (type === '7days' ? 7 : 30);
+        data = generateMockData(rowsCount);
+    }
+
+    // Populate Averages
+    document.getElementById("soilAvg").innerText = avg.soil || "--";
+    document.getElementById("tempAvg").innerText = avg.temp || "--";
+    document.getElementById("humAvg").innerText = avg.humidity || "--";
+    document.getElementById("lightAvg").innerText = avg.light || "--";
+
+    // Populate Table
+    const table = document.getElementById("tableBody");
+    table.innerHTML = "";
+
+    if (data.length === 0) {
+        table.innerHTML = "<tr><td colspan='6' style='text-align:center;'>No records found</td></tr>";
+        return;
+    }
+
+    data.forEach(row => {
+        const isHealthy = row.status.toLowerCase() === 'healthy';
+        const badgeClass = isHealthy ? 'healthy' : 'moderate';
+        
+        table.innerHTML += `
+        <tr class="clickable-row" onclick="goToDay('${row.date}')">
+            <td style="color: var(--text-main); font-weight: 500;">
+                <i class="ph ph-calendar-blank" style="margin-right: 6px; color: var(--text-dark);"></i>
+                ${row.date}
+            </td>
+            <td>${row.soil}</td>
+            <td>${row.temp}</td>
+            <td>${row.humidity}</td>
+            <td>${row.light}</td>
+            <td>
+                <div class="status-badge ${badgeClass}">
+                    <div class="status-dot"></div>
+                    ${row.status}
+                </div>
+            </td>
+        </tr>
+        `;
+    });
+}
+
+function goToDay(date){
+    // Safe navigation that works on both actual servers and local HTML previews
+    try {
+        window.location.href = "/day/" + date;
+    } catch (e) {
+        console.log("Navigation triggered for: ", date);
+    }
+}
+
+function download(){
+    try {
+        window.location.href = "/download";
+    } catch (e) {
+        alert("Export functionality requires backend connection.");
+    }
+}
+
+// Initial default load (matches the HTML active class)
+document.addEventListener("DOMContentLoaded", () => {
+    loadAll("7days", document.querySelector(".filter-btn.active"));
+});
+
+</script>
+
+</body>
+</html>

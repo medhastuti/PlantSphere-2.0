@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PlantSphere</title>
+<link rel="icon" type="image/png" href="https://img.icons8.com/?size=100&id=H7nzwXHBxuzU&format=png&color=000000" />
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+<style>
+    :root {
+        --bg-main: #030712;
+        --bg-gradient-1: #0f172a;
+        --bg-gradient-2: #020617;
+        
+        --glass-bg: rgba(17, 24, 39, 0.45);
+        --glass-border: rgba(255, 255, 255, 0.08);
+        --glass-highlight: rgba(255, 255, 255, 0.04);
+        
+        --text-main: #f8fafc;
+        --text-muted: #94a3b8;
+        --text-dark: #64748b;
+        
+        --primary: #10b981;
+        --primary-hover: #059669;
+        --primary-glow: rgba(16, 185, 129, 0.25);
+        
+        --accent: #38bdf8;
+        --accent-glow: rgba(56, 189, 248, 0.25);
+    }
+
+    /* GLOBAL */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        font-family: 'Inter', sans-serif;
+        background: radial-gradient(circle at 15% 0%, var(--bg-gradient-1), transparent 40%),
+                    radial-gradient(circle at 85% 100%, var(--bg-gradient-2), transparent 40%),
+                    var(--bg-main);
+        background-attachment: fixed;
+        color: var(--text-main);
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+    /* ANIMATIONS */
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes pulse-glow {
+        0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+        70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    .animate-fade-in {
+        animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        opacity: 0;
+    }
+    .delay-1 { animation-delay: 0.15s; }
+    .delay-2 { animation-delay: 0.3s; }
+
+    /* CONTAINER */
+    .container {
+        max-width: 1440px;
+        margin: auto;
+        padding: 3rem 4%;
+    }
+
+    /* --- NEW IMPROVED MAIN HEADER --- */
+    .main-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 3rem;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+    }
+
+    .logo-box {
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.1));
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: var(--primary);
+        box-shadow: 0 0 20px var(--primary-glow);
+    }
+
+    .logo{
+        width:56px;
+        height:56px;
+        border-radius:12px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        font-weight:800;
+        color:white;
+
+        background:linear-gradient(135deg,#43e97b,#38b2ac);
+        box-shadow:
+            0 8px 25px rgba(56,178,172,0.4),
+            0 0 20px rgba(67,233,123,0.35);
+    }
+
+    .header-titles {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .main-title {
+        font-size: 2rem;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        background: linear-gradient(135deg, #34d399, #059669);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        line-height: 1;
+        margin: 0;
+    }
+
+    .subtitle {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+        font-weight: 500;
+        margin: 0;
+    }
+
+    .header-right {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 16px;
+        min-width: 420px; /* ensures space */
+    }
+
+    /* MAKE BUTTONS BIGGER */
+    .header-actions .btn {
+        flex: 1;                 /* equal width */
+        padding: 14px 22px;     /* increase height + width */
+        font-size: 1rem;
+        border-radius: 14px;
+        justify-content: center;
+    }
+
+    .divider-vertical {
+        width: 1px;
+        height: 32px;
+        background: var(--glass-border);
+    }
+
+    .header-icons {
+        display: flex;
+        gap: 12px;
+    }
+
+    .icon-btn {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--glass-border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.35rem;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .icon-btn:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.2);
+        color: var(--text-main);
+        transform: translateY(-2px);
+    }
+
+    .notification-dot {
+        position: absolute;
+        top: 10px;
+        right: 12px;
+        width: 8px;
+        height: 8px;
+        background: #ef4444;
+        border-radius: 50%;
+        box-shadow: 0 0 10px #ef4444;
+    }
+    /* -------------------------------- */
+
+    /* GRIDS */
+    .grid {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr;
+        gap: 1.75rem;
+        margin-bottom: 1.75rem;
+    }
+
+    .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.75rem;
+    }
+
+    /* CARD BASE */
+    .card {
+        width: 100%;
+        min-width: 0;
+        background: var(--glass-bg);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid var(--glass-border);
+        border-radius: 24px;
+        padding: 2rem;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s;
+    }
+
+    .card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .card h3 {
+        font-size: 1.15rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--text-main);
+    }
+
+    .card h3 i { color: var(--primary); font-size: 1.3rem; }
+
+    /* HERO OVERVIEW CARD */
+    .overview {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 2rem;
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, var(--glass-bg) 100%);
+        border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .plant-profile {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .plant-icon {
+        width: 88px;
+        height: 88px;
+        border-radius: 24px;
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.1));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: var(--primary);
+        box-shadow: 0 0 25px var(--primary-glow), inset 0 0 15px rgba(255,255,255,0.05);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .plant-profile h1 {
+        font-size: 2.25rem;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+        margin-bottom: 10px;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+        padding: 8px 16px;
+        border-radius: 999px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        border: 1px solid rgba(16, 185, 129, 0.4);
+        animation: pulse-glow 2.5s infinite;
+    }
+
+    /* BUTTONS */
+    .btn {
+        padding: 12px 24px;
+        border-radius: 14px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .btn-camera {
+        border: 1px solid rgba(56, 189, 248, 0.4);
+        background: rgba(56, 189, 248, 0.05);
+        color: var(--accent);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    .btn-camera:hover {
+        background: rgba(56, 189, 248, 0.15);
+        box-shadow: 0 0 20px var(--accent-glow);
+        transform: translateY(-2px);
+    }
+
+    /* KEY INFO CARD */
+    .key-card { justify-content: center; }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 2rem;
+        height: 100%;
+    }
+
+    .info-col { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 8px; }
+    
+    .divider {
+        width: 1px;
+        height: 70%;
+        background: linear-gradient(to bottom, transparent, var(--glass-border), transparent);
+    }
+
+    .info-label { 
+        font-size: 0.8rem; 
+        color: var(--text-muted); 
+        text-transform: uppercase; 
+        letter-spacing: 1.5px; 
+        font-weight: 600; 
+    }
+    .info-value { 
+        font-size: 2.25rem; 
+        font-weight: 700; 
+        letter-spacing: -1px; 
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+    }
+
+    .progress {
+        height: 6px;
+        width: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        border-radius: 999px;
+        overflow: hidden;
+        margin-top: 8px;
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.8);
+    }
+
+    #healthBar {
+        height: 100%;
+        width: 0%;
+        border-radius: 999px;
+        transition: width 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+        position: relative;
+    }
+    
+    #healthBar::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+        border-radius: 999px;
+    }
+
+    .stable { color: var(--accent); font-size: 1.75rem; display: flex; align-items: center; gap: 10px; }
+    .stable i { background: var(--accent-glow); padding: 8px; border-radius: 12px; }
+
+    /* CHARTS CONTAINER */
+    .chart-container {
+        position: relative;
+        flex-grow: 1;
+        min-height: 250px;
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    canvas {
+        width: 100% !important;
+        height: 250px !important;
+    }
+
+    /* INSIGHTS */
+    .insights-list {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        flex-grow: 1;
+        justify-content: center;
+    }
+
+    .insight-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        font-size: 0.95rem;
+        color: var(--text-main);
+        background: linear-gradient(90deg, rgba(255,255,255,0.03), transparent);
+        padding: 14px 16px;
+        border-radius: 16px;
+        border: 1px solid rgba(255,255,255,0.02);
+        transition: all 0.3s ease;
+    }
+
+    .insight-item:hover {
+        background: linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.01));
+        border-color: var(--glass-border);
+        transform: translateX(5px);
+    }
+
+    .insight-item i {
+        color: var(--primary);
+        font-size: 1.25rem;
+        background: rgba(16, 185, 129, 0.15);
+        padding: 8px;
+        border-radius: 10px;
+        box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.2);
+    }
+
+    /* BOTTOM ACTIONS */
+    .actions {
+        display: flex;
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+
+    .btn-primary {
+        flex: 1;
+        background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+        border: 1px solid rgba(255,255,255,0.1);
+        color: white;
+        font-size: 1.05rem;
+        box-shadow: 0 8px 20px rgba(16, 185, 129, 0.2);
+    }
+    .btn-primary:hover {
+        box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+        transform: translateY(-3px);
+    }
+
+    .btn-secondary {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--glass-border);
+        color: var(--text-main);
+        font-size: 1.05rem;
+    }
+    .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.2);
+        transform: translateY(-3px);
+    }
+
+    /* RESPONSIVE FIX - CLEAN VERSION */
+
+    /* Tablet */
+    @media (max-width: 1024px) {
+        .grid {
+            grid-template-columns: 1fr;
+        }
+
+        .overview {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: nowrap;               /* prevent wrapping */
+            gap: 1rem;
+        }
+
+        .info-row {
+            flex-direction: row;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .info-col {
+            flex: 1;
+        }
+
+        .divider {
+            display: block;  /* keep divider visible */
+            height: 50px;
+        }
+    }
+
+    @media (max-width: 1024px) {
+        .grid {
+            grid-template-columns: 1fr;
+        }
+
+        .grid-3 {
+            grid-template-columns: 1fr !important;
+        }
+
+        .container {
+            padding: 2rem 5%;
+        }
+    }
+
+    /* Mobile */
+    @media (max-width: 768px) {
+        .container {
+            padding: 2rem 5%;
+        }
+
+        .main-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .header-right {
+            width: 100%;
+        }
+
+        .header-actions {
+            min-width: 0 !important;
+            width: 100%;
+            flex-direction: row;        /* keep them in one line */
+        }
+
+        .header-actions .btn {
+            width: 100%;
+            padding: 12px 16px; /* slightly smaller */
+            font-size: 0.9rem;
+        }
+
+        .actions {
+            flex-direction: column;
+        }
+
+        .overview {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .overview .btn-camera {
+            align-self: flex-end;
+        }
+    }
+
+    /* Small phones */
+    @media (max-width: 480px) {
+        .plant-profile {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .plant-icon {
+            width: 72px;
+            height: 72px;
+            font-size: 2.2rem;
+        }
+
+        .plant-profile h1 {
+            font-size: 1.6rem;
+        }
+
+        .info-row {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .divider {
+            display: none;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <header class="main-header animate-fade-in">
+        <div class="header-left">
+             <div class="logo">
+                <img src="https://img.icons8.com/?size=100&id=Uv7eeOHaVcPm&format=png&color=000000" alt="IoT Plant Logo" style="width:42px; height:auto; object-fit:contain;">
+            </div>
+            <div class="header-titles">
+                <h1 class="main-title">PlantSphere</h1>
+                <p class="subtitle">Real-time plant monitoring dashboard</p>
+            </div>
+        </div>
+        
+        <div class="header-right">
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="openSensor()">
+                    <i class="ph-bold ph-sliders"></i> Live Data
+                </button>
+                <button class="btn btn-secondary" onclick="goPast()">
+                    <i class="ph-bold ph-clock-counter-clockwise"></i> History
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="grid animate-fade-in delay-1">
+        
+        <div class="card overview">
+            <div class="plant-profile">
+                <div class="plant-icon">
+                    <i class="ph-fill ph-leaf"></i>
+                </div>
+                <div>
+                    <h1>Home Plant #01</h1>
+                    <div class="badge">
+                        <i class="ph-fill ph-check-circle"></i> Optimal Health
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-camera" onclick="openCamera()">
+                <i class="ph-fill ph-video-camera"></i> Watch Live
+            </button>
+        </div>
+
+        <div class="card key-card">
+            <h3><i class="ph-fill ph-activity"></i> Vital Signs</h3>
+
+           <div class="info-row">
+                <div class="info-col">
+                    <div class="info-label">Overall Health Score</div>
+                    <div class="info-value" id="overallHealth">--<span style="font-size: 1.25rem; color: var(--text-muted);">%</span></div>
+                    <div class="progress">
+                        <div id="healthBar"></div>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="info-col">
+                    <div class="info-label">Growth Status</div>
+                    <div class="info-value stable">
+                        <i class="ph-bold ph-trend-up"></i> Stable
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="grid-3 animate-fade-in delay-2">
+
+        <div class="card">
+            <h3><i class="ph-fill ph-chart-line-up"></i> Growth Trend</h3>
+            <div class="chart-container">
+                <canvas id="chart"></canvas>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3><i class="ph-fill ph-chart-pie-slice"></i> Health Distribution</h3>
+            <div class="chart-container">
+                <canvas id="pie"></canvas>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3><i class="ph-fill ph-sparkle"></i> System Insights</h3>
+            <div id="insightsList" class="insights-list">
+                </div>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+// CHART CONFIGURATION 
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.color = "#64748b";
+Chart.defaults.scale.grid.color = "rgba(255, 255, 255, 0.04)";
+
+// NAVIGATION FUNCTIONS
+function goPast(){
+    try { window.location.href = "/history"; } catch(e) {}
+}
+function openCamera() {
+    window.location.href = "/camera";  // Flask route
+}
+function openSensor() {
+    window.location.href = "/sensor";
+}
+
+// 1. OVERALL HEALTH LOGIC
+async function loadOverallHealth() {
+    let data;
+    try {
+        const res = await fetch("/api/status-breakdown");
+        if(!res.ok) throw new Error("API not found");
+        data = await res.json();
+    } catch (e) {
+        data = { Healthy: 88, Moderate: 10, Critical: 2 };
+    }
+
+    const h = data.Healthy || 0;
+    const m = data.Moderate || 0;
+    const c = data.Critical || 0;
+    const total = h + m + c;
+    
+    if (total === 0) return;
+
+    const health = (h * 100 + m * 60 + c * 30) / total;
+
+    const el = document.getElementById("overallHealth");
+    const bar = document.getElementById("healthBar");
+    
+    // Update value while keeping the % symbol small
+    el.innerHTML = `${health.toFixed(1)}<span style="font-size: 1.25rem; color: var(--text-muted);">%</span>`;
+    
+    setTimeout(() => {
+        if (bar) bar.style.width = health + "%";
+    }, 300); // smooth entry delay
+
+    if (health > 75) {
+        el.style.color = "#34d399";
+        if (bar) { bar.style.background = "#10b981"; bar.style.boxShadow = "0 0 15px rgba(16, 185, 129, 0.6)"; }
+    } else if (health > 50) {
+        el.style.color = "#facc15";
+        if (bar) { bar.style.background = "#eab308"; bar.style.boxShadow = "0 0 15px rgba(234, 179, 8, 0.6)"; }
+    } else {
+        el.style.color = "#f87171";
+        if (bar) { bar.style.background = "#ef4444"; bar.style.boxShadow = "0 0 15px rgba(239, 68, 68, 0.6)"; }
+    }
+}
+
+// 2. INSIGHTS LOGIC
+async function loadInsights() {
+    let statusData = {};
+    let summaryData = [];
+
+    try {
+        const res1 = await fetch("/api/status-breakdown");
+        const res2 = await fetch("/api/summary/7days");
+        if(!res1.ok || !res2.ok) throw new Error("API not found");
+        
+        statusData = await res1.json();
+        summaryData = await res2.json();
+    } catch (e) {
+        statusData = { Healthy: 88, Moderate: 10, Critical: 2 };
+        summaryData = [
+            { temp: 22, humidity: 45 }, 
+            { temp: 24, humidity: 50 },
+            { temp: 25, humidity: 55 }
+        ];
+    }
+
+    const insights = [];
+    const h = statusData.Healthy || 0;
+    const m = statusData.Moderate || 0;
+    const c = statusData.Critical || 0;
+    const total = h + m + c;
+
+    if (total > 0) {
+        const healthyPercent = (h / total) * 100;
+        if (healthyPercent > 70) insights.push({ icon: "ph-shield-check", text: "Plant is performing exceptionally well."});
+        else if (c > 0) insights.push({ icon: "ph-warning", text: "Certain readings require attention."});
+        else insights.push({ icon: "ph-scales", text: "Plant health is moderate and stable."});
+    }
+
+    if (summaryData.length >= 2) {
+        const first = summaryData[0].temp;
+        const last = summaryData[summaryData.length - 1].temp;
+        if (last > first) insights.push({ icon: "ph-thermometer-hot", text: "Temperature trend is slowly increasing."});
+        else insights.push({ icon: "ph-thermometer-simple", text: "Temperature remains perfectly stable."});
+    }
+
+    const avgHum = summaryData.reduce((a,b)=>a+(b.humidity||50),0)/summaryData.length;
+    if (avgHum < 40) insights.push({ icon: "ph-drop", text: "Humidity is lower than the optimal range."});
+    else if (avgHum >= 40 && avgHum <= 70) insights.push({ icon: "ph-drop", text: "Soil moisture retention is excellent."});
+
+    const container = document.getElementById("insightsList");
+    container.innerHTML = "";
+
+    insights.slice(0, 3).forEach(insight => {
+        container.innerHTML += `
+            <div class="insight-item">
+                <i class="ph-fill ${insight.icon}"></i>
+                <span>${insight.text}</span>
+            </div>
+        `;
+    });
+}
+
+// 3. CHARTS LOGIC
+document.addEventListener("DOMContentLoaded", () => {
+    loadOverallHealth();
+    loadInsights();
+
+    // Line Chart (Growth Trend)
+    const ctxLine = document.getElementById("chart").getContext("2d");
+    const gradient = ctxLine.createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(0, "rgba(16, 185, 129, 0.35)");
+    gradient.addColorStop(1, "rgba(16, 185, 129, 0.0)");
+
+    new Chart(ctxLine, {
+        type: "line",
+        data: {
+            labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+            datasets: [{
+                label: "Growth Index",
+                data: [42, 45, 52, 50, 65, 72, 85],
+                borderColor: "#10b981",
+                backgroundColor: gradient,
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 4,
+                pointHoverRadius: 8,
+                pointBackgroundColor: "#0f172a",
+                pointBorderColor: "#10b981",
+                pointBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: { 
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(3, 7, 18, 0.9)',
+                    titleFont: { size: 13, family: "'Inter', sans-serif" },
+                    bodyFont: { size: 13, weight: 'bold' },
+                    padding: 12,
+                    cornerRadius: 8,
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    borderWidth: 1,
+                    displayColors: false
+                }
+            },
+            scales: {
+                x: { grid: { display: false, drawBorder: false } },
+                y: { grid: { borderDash: [5, 5], drawBorder: false }, beginAtZero: true }
+            }
+        }
+    });
+
+    // Doughnut Chart (Pie)
+    async function loadPieChart() {
+        let data;
+        try {
+            const res = await fetch("/api/status-breakdown");
+            if(!res.ok) throw new Error("API not found");
+            data = await res.json();
+        } catch (e) {
+            data = { Healthy: 78, Moderate: 17, Critical: 5 };
+        }
+
+        new Chart(document.getElementById("pie"), {
+            type: "doughnut",
+            data: {
+                labels: ["Healthy", "Moderate", "Critical"],
+                datasets: [{
+                    data: [data.Healthy || 0, data.Moderate || 0, data.Critical || 0],
+                    backgroundColor: ["#10b981", "#facc15", "#ef4444"],
+                    hoverBackgroundColor: ["#34d399", "#fde047", "#f87171"],
+                    hoverOffset: 6,
+                    borderWidth: 2,
+                    borderColor: "#0f172a"
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: "75%",
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        labels: { padding: 25, usePointStyle: true, pointStyle: 'circle', font: { size: 12 } }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(3, 7, 18, 0.9)',
+                        padding: 12,
+                        cornerRadius: 8,
+                        borderColor: 'rgba(255,255,255,0.1)',
+                        borderWidth: 1
+                    }
+                }
+            }
+        });
+    }
+
+    loadPieChart();
+});
+</script>
+
+</body>
+</html>

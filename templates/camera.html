@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera - PlantSphere</title>
+    <link rel="icon" type="image/png" href="https://img.icons8.com/?size=100&id=H7nzwXHBxuzU&format=png&color=000000" />
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* CSS Section */
+        :root {
+            --bg-color: #0B101E;
+            --surface: rgba(17, 24, 39, 0.7);
+            --surface-hover: rgba(31, 41, 55, 0.8);
+            --border: rgba(255, 255, 255, 0.08);
+            --primary: #10B981;
+            --primary-glow: rgba(16, 185, 129, 0.4);
+            --danger: #EF4444;
+            --danger-glow: rgba(239, 68, 68, 0.4);
+            --text-main: #F9FAFB;
+            --text-muted: #9CA3AF;
+            --font-main: 'Inter', sans-serif;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated Background */
+        .bg-gradient {
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.03) 0%, transparent 50%);
+            z-index: -1;
+            animation: rotateBg 30s linear infinite;
+        }
+
+        @keyframes rotateBg {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Glassmorphism Utilities */
+        .glass {
+            background: var(--surface);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Navbar */
+        .navbar {
+            position: sticky;
+            top: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            z-index: 100;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .brand {
+            font-size: 1.25rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-main);
+        }
+
+        .page-title {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-weight: 500;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            transition: var(--transition);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-connected .status-dot {
+            background: var(--primary);
+            box-shadow: 0 0 10px var(--primary-glow);
+            animation: pulse-green 2s infinite;
+        }
+
+        .status-offline .status-dot {
+            background: var(--danger);
+            box-shadow: 0 0 10px var(--danger-glow);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* Camera Card */
+        .camera-card {
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            position: relative;
+            aspect-ratio: 16 / 9;
+            background: #000;
+        }
+
+        .stream-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .stream-img.loaded {
+            opacity: 1;
+        }
+
+        .skeleton-loader {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(90deg, rgba(255,255,255,0.02) 25%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.02) 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .overlay-live {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            padding: 0.4rem 0.8rem;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: #fff;
+            z-index: 10;
+        }
+
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--danger);
+            animation: pulse-red 1.5s infinite;
+        }
+
+        .overlay-time {
+            position: absolute;
+            bottom: 1rem;
+            right: 1rem;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            padding: 0.4rem 0.8rem;
+            border-radius: var(--radius-md);
+            font-family: monospace;
+            font-size: 0.875rem;
+            color: #fff;
+            z-index: 10;
+        }
+
+        .error-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(11, 16, 30, 0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            z-index: 20;
+            display: none;
+            backdrop-filter: blur(4px);
+        }
+
+        /* Controls Section */
+        .controls-card {
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            display: grid;
+            grid-template-columns: auto 1fr auto auto;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .control-label {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* iOS Style Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: .4s;
+            border-radius: 34px;
+            border: 1px solid var(--border);
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 2px;
+            background-color: var(--text-main);
+            transition: .4s;
+            border-radius: 50%;
+        }
+        .switch input:checked + .slider {
+            background-color: var(--primary);
+            box-shadow: 0 0 12px var(--primary-glow);
+            border-color: var(--primary);
+        }
+        .switch input:checked + .slider:before {
+            transform: translateX(24px);
+            background-color: #fff;
+        }
+
+        /* Custom Select */
+        .custom-select {
+            appearance: none;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 0.6rem 2.5rem 0.6rem 1rem;
+            border-radius: var(--radius-md);
+            font-family: inherit;
+            font-size: 0.875rem;
+            cursor: pointer;
+            outline: none;
+            transition: var(--transition);
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%239CA3AF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.7rem top 50%;
+            background-size: 0.65rem auto;
+        }
+        .custom-select:hover, .custom-select:focus {
+            border-color: var(--primary);
+            background-color: rgba(255, 255, 255, 0.08);
+        }
+        .custom-select option {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: var(--radius-md);
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 100%; height: 100%;
+            background: rgba(255,255,255,0.2);
+            transform: translate(-50%, -50%) scale(0);
+            border-radius: 50%;
+            transition: transform 0.4s ease-out, opacity 0.4s ease-out;
+            opacity: 0;
+        }
+        
+        .btn:active::after {
+            transform: translate(-50%, -50%) scale(2);
+            opacity: 1;
+            transition: 0s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 4px 14px var(--primary-glow);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px var(--primary-glow);
+            background: #0ea5e9; /* Slight hue shift on hover */
+            background: #10B981; 
+            filter: brightness(1.1);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+        }
+        .btn-secondary:hover {
+            background: var(--surface-hover);
+            transform: translateY(-2px);
+        }
+        
+        .btn-icon {
+            padding: 0.6rem;
+        }
+
+        /* SVG Icons */
+        svg {
+            width: 1.25rem;
+            height: 1.25rem;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* Keyframes */
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .page-title { display: none; }
+            .controls-card {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            .control-group { justify-content: space-between; }
+            .action-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+            .btn-primary { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-gradient"></div>
+
+    <nav class="navbar glass">
+        <div class="brand" style="color: var(--primary);">
+            <i class="ph-fill ph-plant"></i> PlantSphere
+        </div>
+        <div class="page-title">Live Camera</div>
+        <div class="status-badge status-offline" id="connectionStatus">
+            <div class="status-dot"></div>
+            <span id="statusText">Offline</span>
+        </div>
+    </nav>
+
+    <main class="container">
+
+        <div class="camera-card glass" id="cameraContainer">
+            <div class="skeleton-loader" id="skeleton">Connecting to Stream...</div>
+            
+            <div class="overlay-live">
+                <div class="live-dot"></div> LIVE
+            </div>
+            
+            <div class="overlay-time" id="timestamp">00:00:00</div>
+
+            <div class="error-overlay" id="errorOverlay">
+                <svg style="width: 3rem; height: 3rem; stroke: var(--danger);"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                <span style="color: var(--text-main); font-weight: 500;">Connection Lost. Reconnecting...</span>
+            </div>
+
+            <img id="stream" class="stream-img" alt="ESP32 Stream">
+        </div>
+
+        <div class="controls-card glass">
+
+            <div class="control-group">
+                <span class="control-label">Quality</span>
+                <select class="custom-select" id="resolutionSelect">
+                    <option value="12">QXGA (2048x1564)</option>
+                    <option value="10">UXGA (1600x1200)</option>
+                    <option value="9">SXGA (1280x1024)</option>
+                    <option value="8">XGA (1024x768)</option>
+                    <option value="6">VGA (640x480)</option>
+                    <option value="5" selected>CIF (400x296)</option>
+                </select>
+            </div>
+
+            <button class="btn btn-primary" id="btnCapture" title="Shortcut: Press 'C'">
+                <svg><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                Capture Photo
+            </button>
+
+            <div class="control-group action-buttons">
+                <button class="btn btn-secondary btn-icon" id="btnRefresh" title="Refresh Stream">
+                    <svg><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                </button>
+                <button class="btn btn-secondary btn-icon" id="btnFullscreen" title="Fullscreen">
+                    <svg><path d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                </button>
+            </div>
+
+        </div>
+        
+        <div style="margin-bottom: -0.5rem; display: flex;">
+            <button class="btn btn-secondary" onclick="window.location.href='/'" style="padding: 0.5rem 1rem; border-radius: 50px;">
+                <svg viewBox="0 0 24 24" style="margin-right: 0.4rem; width: 1.2rem; height: 1.2rem;"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                Back to Dashboard
+            </button>
+        </div>
+
+    </main>
+
+    <script>
+        // Configuration
+        const ESP32_IP = "192.168.4.1";
+        const ENDPOINTS = {
+            stream: `http://${ESP32_IP}:81/stream`,
+            capture: `http://${ESP32_IP}/capture`,
+            control: `http://${ESP32_IP}/control`
+        };
+
+        // DOM Elements
+        const streamImg = document.getElementById('stream');
+        const skeleton = document.getElementById('skeleton');
+        const errorOverlay = document.getElementById('errorOverlay');
+        const statusBadge = document.getElementById('connectionStatus');
+        const statusText = document.getElementById('statusText');
+        const timestampEl = document.getElementById('timestamp');
+        const cameraContainer = document.getElementById('cameraContainer');
+        
+        // Controls
+        const resolutionSelect = document.getElementById('resolutionSelect');
+        const btnCapture = document.getElementById('btnCapture');
+        const btnRefresh = document.getElementById('btnRefresh');
+        const btnFullscreen = document.getElementById('btnFullscreen');
+
+        let isStreamAlive = false;
+        let reconnectInterval;
+
+        // --- Core Functions ---
+
+        function updateTimestamp() {
+            const now = new Date();
+            timestampEl.textContent = now.toLocaleTimeString('en-US', { 
+                hour12: false, hour: '2-digit', minute:'2-digit', second:'2-digit' 
+            }) + " | " + now.toLocaleDateString();
+        }
+        setInterval(updateTimestamp, 1000);
+        updateTimestamp();
+
+        function setStatus(connected) {
+            isStreamAlive = connected;
+            if (connected) {
+                statusBadge.classList.replace('status-offline', 'status-connected');
+                statusText.textContent = 'Connected';
+                errorOverlay.style.display = 'none';
+                streamImg.classList.add('loaded');
+                clearInterval(reconnectInterval);
+            } else {
+                statusBadge.classList.replace('status-connected', 'status-offline');
+                statusText.textContent = 'Offline';
+                streamImg.classList.remove('loaded');
+                errorOverlay.style.display = 'flex';
+                attemptReconnect();
+            }
+        }
+
+        function loadStream() {
+            skeleton.style.display = 'flex';
+            // Cache busting to force new stream load
+            streamImg.src = `${ENDPOINTS.stream}?t=${new Date().getTime()}`;
+        }
+
+        function attemptReconnect() {
+            if (!reconnectInterval) {
+                reconnectInterval = setInterval(() => {
+                    if (!isStreamAlive) loadStream();
+                }, 5000); // Try every 5 seconds
+            }
+        }
+
+        // ESP32 API Fetch Wrapper
+        async function sendCommand(variable, value) {
+            try {
+                const response = await fetch(`${ENDPOINTS.control}?var=${variable}&val=${value}`);
+                if (!response.ok) throw new Error('Network response was not ok');
+                console.log(`Set ${variable} to ${value}`);
+            } catch (error) {
+                console.error('Command failed:', error);
+                // Optional: show a toast notification here
+            }
+        }
+
+        // --- Event Listeners ---
+
+        // Image Load / Error Handlers
+        streamImg.onload = () => {
+            skeleton.style.display = 'none';
+            setStatus(true);
+        };
+
+        streamImg.onerror = () => {
+            setStatus(false);
+        };
+
+        resolutionSelect.addEventListener('change', async (e) => {
+            // 1. Show the loading overlay temporarily
+            skeleton.style.display = 'flex';
+            skeleton.textContent = 'Adjusting Quality...';
+            
+            // 2. Send the command to ESP32
+            await sendCommand('framesize', e.target.value);
+            
+            // 3. The ESP32 stream automatically pushes the new resolution on the next frame.
+            // We just wait 1.5 seconds for it to catch up, then hide the overlay manually.
+            setTimeout(() => {
+                skeleton.style.display = 'none';
+                skeleton.textContent = 'Connecting to Stream...'; // Reset text just in case
+            }, 1500);
+        });
+
+        btnCapture.addEventListener('click', () => {
+            btnCapture.style.transform = 'scale(0.95)';
+            setTimeout(() => btnCapture.style.transform = '', 150);
+            window.open(ENDPOINTS.capture, '_blank');
+        });
+
+        btnRefresh.addEventListener('click', loadStream);
+
+        btnFullscreen.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                cameraContainer.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        });
+
+        // Keyboard Shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'c') {
+                btnCapture.click();
+            }
+        });
+
+        // Init
+        loadStream();
+
+    </script>
+</body>
+</html>
